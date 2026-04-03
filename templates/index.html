@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily 30 | Workout Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        .timer-circle { transition: stroke-dashoffset 1s linear; }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-slate-800 rounded-3xl p-8 shadow-2xl text-center border border-slate-700">
+        <h1 class="text-3xl font-bold mb-2 text-blue-400">Daily 30</h1>
+        <p class="text-slate-400 mb-8">Hit your 30-minute goal</p>
+
+        <div class="relative inline-flex items-center justify-center mb-8">
+            <svg class="w-64 h-64 transform -rotate-90">
+                <circle cx="128" cy="128" r="120" stroke="currentColor" stroke-width="8" fill="transparent" class="text-slate-700" />
+                <circle id="progress" cx="128" cy="128" r="120" stroke="currentColor" stroke-width="8" fill="transparent" 
+                        stroke-dasharray="754" stroke-dashoffset="0"
+                        class="text-blue-500 timer-circle" />
+            </svg>
+            <div id="timer-text" class="absolute text-5xl font-mono font-bold">30:00</div>
+        </div>
+
+        <div class="flex gap-4 justify-center">
+            <button id="startBtn" class="bg-blue-600 hover:bg-blue-500 px-8 py-3 rounded-full font-bold transition-all shadow-lg active:scale-95">
+                START
+            </button>
+            <button id="resetBtn" class="bg-slate-700 hover:bg-slate-600 px-8 py-3 rounded-full font-bold transition-all active:scale-95">
+                RESET
+            </button>
+        </div>
+        
+        <p id="status" class="mt-6 text-sm text-slate-500 h-4"></p>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // REPLACE THIS with your actual Render URL
+        const BACKEND_URL = 'https://your-app-name.onrender.com';
+        
+        let timeLeft = 30 * 60; // 30 minutes in seconds
+        let timerId = null;
+        const totalSeconds = 30 * 60;
+
+        const timerText = document.getElementById('timer-text');
+        const progressCircle = document.getElementById('progress');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const statusText = document.getElementById('status');
+
+        function updateDisplay() {
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            timerText.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            // Update circular progress
+            const offset = 754 - (754 * timeLeft) / totalSeconds;
+            progressCircle.style.strokeDashoffset = offset;
+        }
+
+        async function saveToRender() {
+            statusText.textContent = "Saving to cloud...";
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/log`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ minutes: 30 })
+                });
+                
+                if (response.ok) {
+                    statusText.textContent = "Workout Logged! 🎉";
+                    statusText.className = "mt-6 text-sm text-green-400";
+                } else {
+                    throw new Error("Server Error");
+                }
+            } catch (err) {
+                statusText.textContent = "Saved locally (Offline)";
+                statusText.className = "mt-6 text-sm text-yellow-500";
+                // Optionally save to localStorage here
+            }
+        }
+
+        startBtn.onclick = () => {
+            if (timerId) {
+                clearInterval(timerId);
+                timerId = null;
+                startBtn.textContent = 'RESUME';
+                startBtn.classList.replace('bg-red-600', 'bg-blue-600');
+            } else {
+                startBtn.textContent = 'PAUSE';
+                startBtn.classList.replace('bg-blue-600', 'bg-red-600');
+                timerId = setInterval(() => {
+                    timeLeft--;
+                    updateDisplay();
+                    if (timeLeft <= 0) {
+                        clearInterval(timerId);
+                        saveToRender();
+                        alert("30 Minutes Complete! Great session.");
+                    }
+                }, 1000);
+            }
+        };
+
+        resetBtn.onclick = () => {
+            clearInterval(timerId);
+            timerId = null;
+            timeLeft = totalSeconds;
+            updateDisplay();
+            startBtn.textContent = 'START';
+            startBtn.classList.replace('bg-red-600', 'bg-blue-600');
+            statusText.textContent = "";
+        };
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
+</body>
+</html>
