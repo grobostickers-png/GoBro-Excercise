@@ -1,154 +1,362 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>GoBro-Excercise</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEAST MODE - Unleash Your Potential</title>
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&family=Exo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+
     <style>
-        body { font-family: sans-serif; background: #121212; color: white; text-align: center; margin: 0; }
-        .header { padding: 20px; background: #1f1f1f; display: flex; justify-content: space-around; align-items: center; }
-        .view-container { position: relative; width: 100%; max-width: 640px; margin: 10px auto; border: 2px solid #333; border-radius: 10px; overflow: hidden; }
-        video { display: none; }
-        canvas { width: 100%; height: auto; display: block; }
-        
-        .controls { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 640px; margin: 0 auto; }
-        button { padding: 15px; font-weight: bold; cursor: pointer; border-radius: 5px; border: none; }
-        .btn-start { background: #4CAF50; color: white; }
-        .btn-save { background: #2196F3; color: white; }
-        .btn-flip { background: #555; color: white; grid-column: span 2; }
-        
-        .stats { display: flex; justify-content: space-around; padding: 20px; background: #1f1f1f; font-size: 1.5rem; }
-        .stat-box span { display: block; font-size: 0.8rem; color: #888; }
-        #status { color: #ffeb3b; margin: 10px; font-weight: bold; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --electric-blue: #00d9ff;
+            --victory-gold: #ffd700;
+            --power-red: #ff2d55;
+            --energy-orange: #ff9500;
+            --dark-bg: #0c0c1d;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: var(--dark-bg);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Energy Background */
+        .energy-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%; z-index: -2;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(0, 217, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 45, 85, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.05) 0%, transparent 70%);
+            animation: energyPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes energyPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        /* Floating Particles */
+        .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
+        .particle { position: absolute; width: 4px; height: 4px; background: var(--electric-blue); border-radius: 50%; animation: float 15s infinite; opacity: 0.6; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(180deg, rgba(12, 12, 29, 0.95) 0%, transparent 100%);
+            padding: 20px 40px;
+            position: sticky; top: 0; z-index: 100;
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header-content { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .brand { display: flex; align-items: center; gap: 15px; }
+
+        .logo {
+            font-family: 'Teko', sans-serif;
+            font-size: 3rem; font-weight: 700;
+            background: linear-gradient(135deg, var(--electric-blue), var(--victory-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+            animation: logoGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes logoGlow {
+            from { filter: drop-shadow(0 0 10px rgba(0, 217, 255, 0.5)); }
+            to { filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.8)); }
+        }
+
+        .timer-display {
+            font-family: 'Teko', sans-serif; font-size: 2.5rem; color: var(--victory-gold);
+        }
+
+        /* Main Container */
+        .container { max-width: 800px; margin: 0 auto; padding: 40px; }
+
+        /* Workout Controls (Exercise Selection) */
+        .exercise-selector {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;
+            padding: 15px 30px; margin-bottom: 30px;
+        }
+
+        .exercise-selector select {
+            background: transparent; border: 1px solid var(--electric-blue); color: white;
+            padding: 10px 15px; border-radius: 8px; font-family: 'Exo 2', sans-serif;
+            font-weight: 600; cursor: pointer;
+        }
+
+        /* AI Camera Viewport */
+        .ai-viewport {
+            position: relative; width: 100%; height: 450px;
+            background: rgba(0, 0, 0, 0.6); border-radius: 20px;
+            overflow: hidden; border: 2px solid rgba(0, 217, 255, 0.2);
+            box-shadow: 0 0 30px rgba(0, 217, 255, 0.1); margin-bottom: 30px;
+        }
+
+        #input_video { display: none; }
+        #output_canvas { width: 100%; height: 100%; object-fit: cover; }
+
+        .ai-status-overlay {
+            position: absolute; top: 20px; left: 20px;
+            padding: 8px 16px; background: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--victory-gold); border-radius: 10px;
+            font-family: 'Teko', sans-serif; font-size: 1.5rem; color: var(--victory-gold);
+        }
+
+        /* Stats Dashboard */
+        .stats-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0; }
+
+        .stat-card {
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;
+            padding: 25px; text-align: center;
+        }
+
+        .stat-name { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; color: rgba(255, 255, 255, 0.6); }
+        .stat-value-large {
+            font-family: 'Teko', sans-serif; font-size: 3.5rem; font-weight: 700; line-height: 1;
+            background: linear-gradient(180deg, white, var(--electric-blue));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        /* CTA Controls */
+        .cta-section { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 40px; }
+
+        .cta-button {
+            display: inline-flex; align-items: center; gap: 15px;
+            background: linear-gradient(135deg, var(--power-red), var(--energy-orange));
+            color: white; border: none; padding: 20px 40px;
+            font-family: 'Teko', sans-serif; font-size: 1.8rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 2px; border-radius: 50px;
+            cursor: pointer; transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(255, 45, 85, 0.3);
+        }
+
+        .cta-button:hover { transform: scale(1.05); box-shadow: 0 15px 40px rgba(255, 45, 85, 0.5); }
+        .cta-button.secondary { background: linear-gradient(135deg, var(--victory-gold), var(--energy-orange)); }
+
+        .flip-btn {
+            background: transparent; border: 1px solid var(--electric-blue); color: var(--electric-blue);
+            padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: 'Exo 2';
+            font-weight: 600; transition: 0.3s;
+        }
+        .flip-btn:hover { background: rgba(0, 217, 255, 0.1); box-shadow: 0 0 20px rgba(0, 217, 255, 0.3); }
+
+        @media (max-width: 768px) { .container { padding: 20px; } }
     </style>
 </head>
 <body>
+    <div class="energy-bg"></div>
+    <div class="particles" id="particles"></div>
 
-<div class="header">
-    <h2>WORKOUT AI</h2>
-    <select id="ex-select" style="padding: 5px;">
-        <option value="squat">SQUATS</option>
-        <option value="bicep_curl">CURLS</option>
-    </select>
-</div>
+    <header>
+        <div class="header-content">
+            <div class="brand">
+                <div class="logo">BEAST MODE</div>
+            </div>
+            <div class="timer-display" id="timer">00:00</div>
+        </div>
+    </header>
 
-<div id="status">Ready to Start</div>
+    <div class="container">
+        
+        <div class="exercise-selector">
+            <div>
+                <span style="font-weight:700; letter-spacing:1px; margin-right:10px;">EXERCISE:</span>
+                <select id="exercise-select">
+                    <option value="squat">SQUATS</option>
+                    <option value="bicep_curl">BICEP CURLS</option>
+                </select>
+            </div>
+            <button class="flip-btn" id="flip-btn">🔄 FLIP CAMERA</button>
+        </div>
 
-<div class="view-container">
-    <video id="input_video"></video>
-    <canvas id="output_canvas" width="640" height="480"></canvas>
-</div>
+        <div class="ai-viewport">
+            <video id="input_video" playsinline></video>
+            <canvas id="output_canvas" width="640" height="480"></canvas>
+            <div class="ai-status-overlay" id="ai-status">SYSTEM IDLE</div>
+        </div>
 
-<div class="stats">
-    <div class="stat-box"><span id="rep-count">0</span>REPS</div>
-    <div class="stat-box"><span id="angle-text">0°</span>ANGLE</div>
-</div>
+        <div class="cta-section">
+            <button class="cta-button" id="start-btn">🚀 START CAMERA</button>
+            <button class="cta-button secondary" id="save-btn">💥 COMPLETE & SAVE</button>
+        </div>
 
-<div class="controls">
-    <button class="btn-start" id="start-btn">START CAMERA</button>
-    <button class="btn-save" id="save-btn">COMPLETE & SAVE</button>
-    <button class="btn-flip" id="flip-btn">🔄 FLIP CAMERA</button>
-</div>
+        <div class="stats-dashboard">
+            <div class="stat-card">
+                <div class="stat-name">Total Reps</div>
+                <div class="stat-value-large" id="rep-display">0</div>
+            </div>
 
-<script>
-    // --- CONFIG ---
-    const RENDER_URL = "https://gobro-excercise.onrender.com";
-    const EX_DATA = {
-        squat: { p: [23, 25, 27], down: 90, up: 160, label: "Squat" },
-        bicep_curl: { p: [11, 13, 15], down: 45, up: 150, label: "Bicep Curl" }
-    };
+            <div class="stat-card">
+                <div class="stat-name">Current Angle</div>
+                <div class="stat-value-large" id="angle-display">0°</div>
+            </div>
+        </div>
 
-    let currentEx = "squat";
-    let reps = 0;
-    let stage = "up";
-    let isRunning = false;
-    let facingMode = "user";
+    </div>
 
-    const video = document.getElementById('input_video');
-    const canvas = document.getElementById('output_canvas');
-    const ctx = canvas.getContext('2d');
+    <script>
+        // Floating particles (Your original background effect)
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
 
-    // --- MATH ---
-    function calcAngle(a, b, c) {
-        const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
-        let angle = Math.abs((radians * 180.0) / Math.PI);
-        return angle > 180 ? 360 - angle : angle;
-    }
+        // --- 1. ADD YOUR RENDER BACKEND URL HERE ---
+        const RENDER_BACKEND_URL = "https://your-workout-backend.onrender.com";
 
-    // --- POSE AI ---
-    const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
-    pose.setOptions({ modelComplexity: 1, minDetectionConfidence: 0.5 });
-    pose.onResults((results) => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+        const EX_DATA = {
+            squat: { p: [23, 25, 27], down: 90, up: 160, label: "Squat" },
+            bicep_curl: { p: [11, 13, 15], down: 45, up: 150, label: "Bicep Curl" }
+        };
 
-        if (results.poseLandmarks) {
-            const marks = results.poseLandmarks;
-            const config = EX_DATA[currentEx];
-            const a = marks[config.p[0]], b = marks[config.p[1]], c = marks[config.p[2]];
+        let currentEx = "squat";
+        let count = 0;
+        let stage = "up";
+        let isRunning = false;
+        let facingMode = "user";
+        let timerSeconds = 0;
 
-            if (a.visibility > 0.5 && b.visibility > 0.5 && c.visibility > 0.5) {
-                const angle = calcAngle(a, b, c);
-                document.getElementById('angle-text').innerText = Math.round(angle) + "°";
+        const video = document.getElementById('input_video');
+        const canvas = document.getElementById('output_canvas');
+        const ctx = canvas.getContext('2d');
+        const statusDisp = document.getElementById('ai-status');
 
-                if (angle < config.down && stage === "up") {
-                    stage = "down";
-                    document.getElementById('status').innerText = "GO UP";
-                }
-                if (angle > config.up && stage === "down") {
-                    stage = "up";
-                    reps++;
-                    document.getElementById('rep-count').innerText = reps;
-                    document.getElementById('status').innerText = "GOOD!";
+        // --- MATH FOR POSE ---
+        function calculateAngle(a, b, c) {
+            const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+            let angle = Math.abs((radians * 180.0) / Math.PI);
+            return angle > 180 ? 360 - angle : angle;
+        }
+
+        // --- MEDIAPIPE POSE LOGIC ---
+        const pose = new Pose({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+        });
+        pose.setOptions({ modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+        
+        pose.onResults((results) => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+            if (results.poseLandmarks) {
+                const landmarks = results.poseLandmarks;
+                const config = EX_DATA[currentEx];
+                const pA = landmarks[config.p[0]];
+                const pB = landmarks[config.p[1]];
+                const pC = landmarks[config.p[2]];
+
+                if (pA.visibility > 0.5 && pB.visibility > 0.5 && pC.visibility > 0.5) {
+                    const angle = calculateAngle(pA, pB, pC);
+                    document.getElementById('angle-display').textContent = Math.round(angle) + "°";
+
+                    if (angle < config.down && stage === "up") {
+                        stage = "down";
+                        statusDisp.textContent = "GO UP! ⚡";
+                    }
+                    if (angle > config.up && stage === "down") {
+                        stage = "up";
+                        count++;
+                        document.getElementById('rep-display').textContent = count;
+                        statusDisp.textContent = "GOOD REP! 🔥";
+                    }
                 }
             }
-        }
-    });
-
-    // --- CAMERA ENGINE ---
-    let camera = null;
-    async function startCam() {
-        if (camera) await camera.stop();
-        camera = new Camera(video, {
-            onFrame: async () => await pose.send({image: video}),
-            width: 640, height: 480, facingMode: facingMode
         });
-        camera.start();
-    }
 
-    // --- BUTTONS ---
-    document.getElementById('start-btn').onclick = () => {
-        isRunning = true;
-        document.getElementById('status').innerText = "AI ACTIVE";
-        startCam();
-    };
-
-    document.getElementById('flip-btn').onclick = () => {
-        facingMode = (facingMode === "user") ? "environment" : "user";
-        if (isRunning) startCam();
-    };
-
-    document.getElementById('save-btn').onclick = async () => {
-        document.getElementById('status').innerText = "SAVING...";
-        try {
-            await fetch(RENDER_URL, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ exercise: currentEx, reps: reps })
+        // --- CAMERA CONTROLS ---
+        let camera = null;
+        async function initCamera() {
+            if (camera) await camera.stop();
+            camera = new Camera(video, {
+                onFrame: async () => { await pose.send({image: video}); },
+                width: 640, height: 480, facingMode: facingMode
             });
-            document.getElementById('status').innerText = "SAVED TO RENDER ✅";
-            reps = 0;
-            document.getElementById('rep-count').innerText = "0";
-        } catch (e) {
-            document.getElementById('status').innerText = "SYNC FAILED (Check URL)";
+            camera.start();
         }
-    };
 
-    document.getElementById('ex-select').onchange = (e) => {
-        currentEx = e.target.value;
-        reps = 0;
-        document.getElementById('rep-count').innerText = "0";
-    };
-</script>
+        document.getElementById('start-btn').onclick = function() {
+            if (!isRunning) {
+                initCamera();
+                this.textContent = "⏹ STOP TRACKING";
+                this.style.background = 'var(--power-red)';
+                isRunning = true;
+                statusDisp.textContent = "AI ACTIVE 🎯";
+            } else {
+                location.reload();
+            }
+        };
+
+        document.getElementById('flip-btn').onclick = () => {
+            facingMode = facingMode === "user" ? "environment" : "user";
+            if (isRunning) initCamera();
+        };
+
+        document.getElementById('exercise-select').onchange = (e) => {
+            currentEx = e.target.value;
+            count = 0;
+            document.getElementById('rep-display').textContent = "0";
+        };
+
+        // --- RENDER BACKEND SAVE ---
+        document.getElementById('save-btn').onclick = async () => {
+            if (count === 0) return;
+            statusDisp.textContent = "UPLOADING TO RENDER...";
+            try {
+                const response = await fetch(`${RENDER_BACKEND_URL}/api/workouts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        exercise: EX_DATA[currentEx].label,
+                        reps: count,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                if (response.ok) {
+                    statusDisp.textContent = "SESSION SYNCED ✅";
+                    count = 0;
+                    document.getElementById('rep-display').textContent = "0";
+                }
+            } catch (err) {
+                statusDisp.textContent = "OFFLINE MODE (Save Failed)";
+            }
+        };
+
+        // Live Timer
+        setInterval(() => {
+            if (isRunning) {
+                timerSeconds++;
+                const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+                const secs = (timerSeconds % 60).toString().padStart(2, '0');
+                document.getElementById('timer').textContent = `${mins}:${secs}`;
+            }
+        }, 1000);
+    </script>
 </body>
 </html>
