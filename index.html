@@ -3,285 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily 30 | Ultimate AI Trainer</title>
+    <title>Daily 30 | AI Pro Trainer</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #020617; overflow-x: hidden; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .camera-container { border-radius: 2rem; overflow: hidden; position: relative; aspect-ratio: 16/9; background: #000; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        #output_canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 10; }
+        #input_video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.4; }
+        .recording-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+    </style>
 </head>
-<body class="bg-slate-950 text-white min-h-screen p-6 font-sans">
+<body class="text-slate-200 min-h-screen p-4 md:p-8">
 
-    <div class="max-w-2xl mx-auto">
-        <header class="flex justify-between items-center mb-6">
+    <div class="max-w-5xl mx-auto">
+        <header class="flex justify-between items-end mb-8">
             <div>
-                <h1 id="current-day" class="text-2xl font-bold text-blue-400"></h1>
-                <p id="current-date" class="text-slate-400 text-sm"></p>
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="recording-dot"></div>
+                    <span class="text-[10px] font-black tracking-[0.2em] text-slate-500 uppercase">AI Neural Link Active</span>
+                </div>
+                <h1 class="text-4xl font-black tracking-tighter text-white italic">DAILY<span class="text-blue-500">30</span></h1>
             </div>
-            <div id="status-badge" class="bg-slate-800 text-slate-400 px-4 py-1 rounded-full border border-slate-700 text-xs font-bold uppercase tracking-widest">
-                Ready
+            <div class="text-right">
+                <p id="current-day" class="text-lg font-bold text-slate-400 leading-none"></p>
+                <p id="current-date" class="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-1"></p>
             </div>
         </header>
 
-        <div class="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-slate-800 mb-6 aspect-video">
-            <video id="input_video" class="absolute inset-0 w-full h-full object-cover opacity-60" playsinline></video>
-            <canvas id="output_canvas" class="absolute inset-0 w-full h-full object-cover"></canvas>
-            
-            <div class="absolute top-4 left-4 bg-slate-900/90 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
-                <p id="hud-exercise-name" class="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-1">SQUATS</p>
-                <div class="text-5xl font-black" id="rep-count">0 <span class="text-xl text-slate-500" id="target-display">/ 15</span></div>
-            </div>
-            
-            <div class="absolute bottom-4 right-4 bg-black/50 px-3 py-1 rounded-lg border border-white/10 backdrop-blur-md">
-                <p class="text-white font-mono text-sm">Angle: <span id="angle-display" class="font-bold text-blue-400">---°</span></p>
-            </div>
-        </div>
+        <div class="grid lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-8">
+                <div class="camera-container border border-slate-800">
+                    <video id="input_video" playsinline></video>
+                    <canvas id="output_canvas"></canvas>
+                    
+                    <button id="flip-camera" class="absolute top-6 right-6 glass p-3 rounded-full hover:bg-blue-600/20 transition-all z-20">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                    </button>
 
-        <div class="grid grid-cols-3 gap-4 mb-6">
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 col-span-2">
-                <label class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Exercise</label>
-                <div class="flex items-center gap-2 mt-1">
-                    <select id="exercise-select" class="bg-transparent w-full text-sm outline-none text-white font-semibold cursor-pointer">
-                        </select>
-                    <button id="openModalBtn" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 text-xs font-bold px-3 py-1 rounded-lg border border-blue-500/30 transition-all active:scale-95">
-                        ➕&nbsp;ADD
+                    <div class="absolute top-6 left-6 glass p-5 rounded-3xl min-w-[150px] z-20 shadow-2xl">
+                        <p id="hud-ex-name" class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">LOADING...</p>
+                        <div class="flex items-baseline gap-1">
+                            <span id="rep-count" class="text-7xl font-black text-white italic leading-none">0</span>
+                            <span class="text-slate-500 font-bold text-xl">/ <span id="target-display">15</span></span>
+                        </div>
+                    </div>
+
+                    <div class="absolute bottom-6 left-6 glass px-4 py-2 rounded-2xl z-20">
+                        <p class="text-[9px] font-black text-slate-500 uppercase">Joint Angle</p>
+                        <p id="angle-display" class="text-xl font-black text-blue-400 tabular-nums">---°</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-4 space-y-4">
+                <div id="status-badge" class="glass w-full py-4 rounded-3xl text-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 border-blue-500/10">
+                    System Standby
+                </div>
+
+                <div class="glass p-6 rounded-[2rem] space-y-6">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] block mb-3">Training Protocol</label>
+                        <div class="relative">
+                            <select id="ex-select" class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl px-5 py-4 text-sm font-bold text-white outline-none focus:border-blue-500 transition-all cursor-pointer">
+                                </select>
+                            <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-blue-500 text-xs">▼</div>
+                        </div>
+                        <button id="openModalBtn" class="w-full mt-3 text-[10px] font-black text-blue-500 hover:text-blue-300 uppercase tracking-widest py-2 transition-colors">
+                            + New Custom Exercise
+                        </button>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] block mb-3">Target Reps</label>
+                        <input type="number" id="target-input" value="15" class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl px-5 py-4 text-2xl font-black text-white outline-none focus:border-blue-500 transition-all">
+                    </div>
+
+                    <button id="startBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-6 rounded-[2rem] font-black tracking-widest shadow-2xl shadow-blue-900/30 transition-all active:scale-95 uppercase italic text-lg">
+                        Start Session
                     </button>
                 </div>
             </div>
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800">
-                <label class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Target Reps</label>
-                <input type="number" id="target-reps" value="15" class="bg-transparent w-full text-lg outline-none mt-1 text-blue-400 font-bold">
-            </div>
         </div>
-
-        <button id="startCameraBtn" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-black tracking-widest shadow-lg transition-all active:scale-95">
-            START CAMERA & TRACKING
-        </button>
-
-        <audio id="alarm-audio" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" preload="auto"></audio>
     </div>
 
-    <div id="modal-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 w-full max-w-md rounded-3xl p-6 border border-slate-800 shadow-2xl">
-            <h2 class="text-xl font-bold mb-4 text-blue-400">Create New Exercise</h2>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="text-xs text-slate-500 font-bold uppercase tracking-widest">Exercise Name</label>
-                    <input id="new-ex-name" type="text" placeholder="e.g., Leg Raises" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 mt-1 text-white outline-none focus:border-blue-500">
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl hidden flex items-center justify-center p-6 z-50">
+        <div class="glass w-full max-w-md rounded-[3rem] p-10 shadow-2xl border-blue-500/20">
+            <h2 class="text-3xl font-black mb-8 text-white italic uppercase tracking-tighter">New Protocol</h2>
+            <div class="space-y-6">
+                <input id="new-name" type="text" placeholder="Exercise Name (e.g. Lunges)" class="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-6 py-5 text-white outline-none focus:border-blue-500">
+                <div class="grid grid-cols-3 gap-4">
+                    <input id="new-pa" type="number" placeholder="Pt A" class="bg-slate-800/50 border border-slate-700 rounded-2xl p-5 text-center text-white font-bold outline-none">
+                    <input id="new-pb" type="number" placeholder="Pt B" class="bg-slate-800/50 border border-slate-700 rounded-2xl p-5 text-center text-white font-bold outline-none">
+                    <input id="new-pc" type="number" placeholder="Pt C" class="bg-slate-800/50 border border-slate-700 rounded-2xl p-5 text-center text-white font-bold outline-none">
                 </div>
-                
-                <div class="grid grid-cols-3 gap-3">
+                <div class="grid grid-cols-2 gap-4 text-center">
                     <div>
-                        <label class="text-xs text-slate-500 font-bold uppercase">Point A</label>
-                        <input id="new-ex-pa" type="number" placeholder="23" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 mt-1 text-white outline-none">
+                        <p class="text-[9px] font-black text-slate-500 uppercase mb-2">Down Angle</p>
+                        <input id="new-down" type="number" placeholder="90" class="w-full bg-slate-800/50 border border-slate-700 rounded-2xl p-5 text-white font-bold outline-none text-center">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500 font-bold uppercase">Point B</label>
-                        <input id="new-ex-pb" type="number" placeholder="25" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 mt-1 text-white outline-none">
-                    </div>
-                    <div>
-                        <label class="text-xs text-slate-500 font-bold uppercase">Point C</label>
-                        <input id="new-ex-pc" type="number" placeholder="27" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 mt-1 text-white outline-none">
-                    </div>
-                </div>
-                <p class="text-[10px] text-slate-600 mt-1">*Use MediaPipe numbers (e.g., Squat = 23, 25, 27)</p>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs text-slate-500 font-bold uppercase">Down Angle</label>
-                        <input id="new-ex-down" type="number" placeholder="90" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 mt-1 text-white outline-none">
-                    </div>
-                    <div>
-                        <label class="text-xs text-slate-500 font-bold uppercase">Up Angle</label>
-                        <input id="new-ex-up" type="number" placeholder="160" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 mt-1 text-white outline-none">
+                        <p class="text-[9px] font-black text-slate-500 uppercase mb-2">Up Angle</p>
+                        <input id="new-up" type="number" placeholder="160" class="w-full bg-slate-800/50 border border-slate-700 rounded-2xl p-5 text-white font-bold outline-none text-center">
                     </div>
                 </div>
             </div>
-
-            <div class="flex gap-3 mt-6">
-                <button id="closeModalBtn" class="flex-1 bg-slate-800 hover:bg-slate-700 py-3 rounded-xl font-bold transition-all text-slate-400">Cancel</button>
-                <button id="saveExerciseBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold transition-all text-white">Save Exercise</button>
+            <div class="flex gap-6 mt-10">
+                <button id="closeModalBtn" class="flex-1 text-slate-500 font-black text-xs uppercase tracking-widest">Cancel</button>
+                <button id="saveExBtn" class="flex-[2] bg-blue-600 py-5 rounded-2xl font-black text-white shadow-xl shadow-blue-900/40 uppercase tracking-widest">Add Exercise</button>
             </div>
         </div>
     </div>
+
+    <audio id="alarm-audio" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" preload="auto"></audio>
 
     <script>
-        // --- 1. DEFAULT EXERCISES ---
+        // 1. Initial Setup & Default Exercises
         const DEFAULT_MENU = {
-            squat: { name: "Squats", pA: 23, pB: 25, pC: 27, downThreshold: 90, upThreshold: 160 },
-            bicep_curl: { name: "Bicep Curls", pA: 11, pB: 13, pC: 15, downThreshold: 45, upThreshold: 150 },
-            shoulder_press: { name: "Shoulder Press", pA: 23, pB: 11, pC: 13, downThreshold: 100, upThreshold: 160 }
+            squat: { name: "Squats", pA: 23, pB: 25, pC: 27, down: 90, up: 160 },
+            bicep_curl: { name: "Bicep Curls", pA: 11, pB: 13, pC: 15, down: 45, up: 150 },
+            shoulder_press: { name: "Shoulder Press", pA: 23, pB: 11, pC: 13, down: 100, up: 160 }
         };
 
-        // Load saved exercises from LocalStorage or use defaults
-        let EXERCISE_MENU = JSON.parse(localStorage.getItem('myCustomWorkouts')) || DEFAULT_MENU;
-        const BACKEND_URL = 'https://your-app-name.onrender.com';
+        let EX_MENU = JSON.parse(localStorage.getItem('DAILY30_EX')) || DEFAULT_MENU;
+        
+        // CRITICAL: CHANGE THIS TO YOUR ACTUAL RENDER URL BEFORE YOU PUSH
+        const RENDER_URL = 'https://YOUR-APP.onrender.com'; 
 
-        // Elements
-        const videoElement = document.getElementById('input_video');
-        const canvasElement = document.getElementById('output_canvas');
-        const canvasCtx = canvasElement.getContext('2d');
-        const repDisplay = document.getElementById('rep-count');
-        const targetDisplay = document.getElementById('target-display');
-        const angleDisplay = document.getElementById('angle-display');
-        const alarmAudio = document.getElementById('alarm-audio');
-        const statusBadge = document.getElementById('status-badge');
-        const startBtn = document.getElementById('startCameraBtn');
-        const exerciseSelect = document.getElementById('exercise-select');
-        const hudExerciseName = document.getElementById('hud-exercise-name');
-        const modalOverlay = document.getElementById('modal-overlay');
+        // 2. DOM Elements
+        const video = document.getElementById('input_video');
+        const canvas = document.getElementById('output_canvas');
+        const ctx = canvas.getContext('2d');
+        const badge = document.getElementById('status-badge');
+        const startBtn = document.getElementById('startBtn');
+        const repCountDisp = document.getElementById('rep-count');
+        const targetDisp = document.getElementById('target-display');
+        const angleDisp = document.getElementById('angle-display');
+        const hudExName = document.getElementById('hud-ex-name');
+        const exSelect = document.getElementById('ex-select');
 
-        // State
-        let count = 0;
-        let target = 15;
-        let stage = "up";
-        let isWorkoutComplete = false;
-        let currentExerciseKey = "squat";
+        // 3. State Variables
+        let count = 0; 
+        let target = 15; 
+        let stage = "up"; 
+        let isDone = false; 
+        let currentKey = "squat";
+        let currentFacingMode = "user"; // 'user' = front camera, 'environment' = back camera
+        let activeCamera = null;
 
-        // Populates the Dropdown
-        function updateDropdown() {
-            exerciseSelect.innerHTML = '';
-            Object.keys(EXERCISE_MENU).forEach(key => {
-                const option = document.createElement('option');
-                option.value = key;
-                option.textContent = EXERCISE_MENU[key].name;
-                option.classList.add("bg-slate-900");
-                exerciseSelect.appendChild(option);
+        // 4. UI Initializers
+        function refreshExList() {
+            exSelect.innerHTML = '';
+            Object.keys(EX_MENU).forEach(k => {
+                const opt = document.createElement('option');
+                opt.value = k; 
+                opt.textContent = EX_MENU[k].name.toUpperCase();
+                exSelect.appendChild(opt);
             });
+            hudExName.textContent = EX_MENU[currentKey].name.toUpperCase();
+        }
+        refreshExList();
+
+        const d = new Date();
+        document.getElementById('current-day').textContent = d.toLocaleDateString('en-US', { weekday: 'long' });
+        document.getElementById('current-date').textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+        // 5. Core AI Math (Geometry Logic)
+        function calcAngle(a, b, c) {
+            const rad = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+            let deg = Math.abs((rad * 180.0) / Math.PI);
+            return deg > 180 ? 360 - deg : deg;
         }
 
-        updateDropdown();
-
-        // Date setup
-        const now = new Date();
-        document.getElementById('current-day').textContent = now.toLocaleDateString('en-US', { weekday: 'long' });
-        document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-
-        function calculateAngle(a, b, c) {
-            const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
-            let angle = Math.abs((radians * 180.0) / Math.PI);
-            if (angle > 180.0) angle = 360 - angle;
-            return angle;
-        }
-
-        async function saveToRender() {
-            statusBadge.textContent = "SYNCING...";
+        // 6. Database Connection
+        async function logWorkout() {
+            badge.textContent = "SYNCING TO BRAIN...";
             try {
-                await fetch(`${BACKEND_URL}/api/log`, {
+                await fetch(`${RENDER_URL}/api/log`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        minutes: 5,
-                        date: new Date().toISOString(),
-                        day: now.toLocaleDateString('en-US', { weekday: 'long' })
+                        minutes: 5, 
+                        date: new Date().toISOString(), 
+                        day: d.toLocaleDateString('en-US', { weekday: 'long' }) 
                     })
                 });
-                statusBadge.textContent = "SAVED TO CLOUD";
-                statusBadge.className = "bg-green-500/20 text-green-400 px-4 py-1 rounded-full border border-green-500/30 text-xs font-bold uppercase tracking-widest";
-            } catch (err) {
-                statusBadge.textContent = "SAVED LOCALLY";
+                badge.textContent = "SYNC COMPLETE";
+                badge.className = "glass w-full py-4 rounded-3xl text-center text-[10px] font-black uppercase text-green-400 border-green-500/30";
+            } catch (e) { 
+                badge.textContent = "SAVED TO LOCAL MEMORY"; 
             }
         }
 
-        function onResults(results) {
-            if (isWorkoutComplete) return;
-            canvasCtx.save();
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-
-            if (results.poseLandmarks) {
-                const ex = EXERCISE_MENU[currentExerciseKey];
-                const a = results.poseLandmarks[ex.pA];
-                const b = results.poseLandmarks[ex.pB];
-                const c = results.poseLandmarks[ex.pC];
-
+        // 7. MediaPipe Drawing & Counting Logic
+        function onResults(res) {
+            if (isDone) return;
+            
+            ctx.save();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(res.image, 0, 0, canvas.width, canvas.height);
+            
+            if (res.poseLandmarks) {
+                const e = EX_MENU[currentKey];
+                const a = res.poseLandmarks[e.pA];
+                const b = res.poseLandmarks[res.poseLandmarks[e.pB] ? e.pB : 25]; // Safe fallback if point B is missing
+                const c = res.poseLandmarks[e.pC];
+                
                 if (a && b && c && a.visibility > 0.5 && b.visibility > 0.5 && c.visibility > 0.5) {
-                    const angle = calculateAngle(a, b, c);
-                    angleDisplay.textContent = Math.round(angle) + "°";
+                    const ang = calcAngle(a, b, c);
+                    angleDisp.textContent = Math.round(ang) + "°";
+                    
+                    // Draw Professional Joint Indicator
+                    ctx.fillStyle = "#3b82f6";
+                    ctx.shadowBlur = 15; 
+                    ctx.shadowColor = "#3b82f6";
+                    ctx.beginPath();
+                    ctx.arc(b.x * canvas.width, b.y * canvas.height, 8, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.shadowBlur = 0; // Reset shadow
 
-                    canvasCtx.fillStyle = "#60a5fa";
-                    canvasCtx.font = "bold 24px Arial";
-                    canvasCtx.fillText(Math.round(angle) + "°", b.x * canvasElement.width + 15, b.y * canvasElement.height);
-
-                    if (angle < ex.downThreshold) { stage = "down"; }
-                    if (angle > ex.upThreshold && stage === "down") {
-                        stage = "up";
+                    // Rep Counting Engine
+                    if (ang < e.down) stage = "down";
+                    if (ang > e.up && stage === "down") {
+                        stage = "up"; 
                         count++;
-                        repDisplay.innerHTML = `${count} <span class="text-xl text-slate-500">/ ${target}</span>`;
+                        repCountDisp.textContent = count;
                         
+                        // Goal Met Trigger
                         if (count >= target) {
-                            isWorkoutComplete = true;
-                            alarmAudio.play();
-                            saveToRender();
-                            startBtn.textContent = "WORKOUT COMPLETE";
-                            startBtn.className = "w-full bg-green-600 py-4 rounded-2xl font-black tracking-widest shadow-lg";
+                            isDone = true; 
+                            document.getElementById('alarm-audio').play();
+                            logWorkout();
+                            startBtn.textContent = "SESSION COMPLETE";
+                            startBtn.className = "w-full bg-green-600 py-6 rounded-[2rem] font-black text-white italic";
                         }
                     }
                 }
             }
-            canvasCtx.restore();
+            ctx.restore();
         }
 
-        const pose = new Pose({
-            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-        });
-
-        pose.setOptions({
-            modelComplexity: 1,
-            smoothLandmarks: true,
-            minDetectionConfidence: 0.6,
-            minTrackingConfidence: 0.6
+        // 8. Initialize MediaPipe Engine
+        const pose = new Pose({ locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}` });
+        pose.setOptions({ 
+            modelComplexity: 1, 
+            smoothLandmarks: true, 
+            minDetectionConfidence: 0.6, 
+            minTrackingConfidence: 0.6 
         });
         pose.onResults(onResults);
 
-        exerciseSelect.onchange = (e) => {
-            currentExerciseKey = e.target.value;
-            hudExerciseName.textContent = EXERCISE_MENU[currentExerciseKey].name;
-            count = 0;
-            repDisplay.innerHTML = `0 <span class="text-xl text-slate-500">/ ${target}</span>`;
-        };
-
-        startBtn.onclick = async () => {
-            target = parseInt(document.getElementById('target-reps').value);
-            targetDisplay.textContent = `/ ${target}`;
-            alarmAudio.play().then(() => alarmAudio.pause()).catch(e => console.log(e));
+        // 9. Camera Controls
+        async function startCam() {
+            if (activeCamera) await activeCamera.stop();
             
-            const camera = new Camera(videoElement, {
-                onFrame: async () => { await pose.send({image: videoElement}); },
-                width: 640, height: 480
+            activeCamera = new Camera(video, {
+                onFrame: async () => { await pose.send({image: video}); },
+                width: 1280, 
+                height: 720, 
+                facingMode: currentFacingMode
             });
-            camera.start();
-            startBtn.textContent = "AI TRACKING ACTIVE";
-            startBtn.classList.replace('bg-blue-600', 'bg-blue-900');
+            activeCamera.start();
+        }
+
+        document.getElementById('flip-camera').onclick = () => {
+            currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+            if (activeCamera) startCam(); // Restart with new lens
         };
 
-        // --- 2. MODAL & LOCALSTORAGE LOGIC ---
-        document.getElementById('openModalBtn').onclick = () => modalOverlay.classList.remove('hidden');
-        document.getElementById('closeModalBtn').onclick = () => modalOverlay.classList.add('hidden');
+        // 10. Event Listeners
+        exSelect.onchange = (e) => {
+            currentKey = e.target.value;
+            hudExName.textContent = EX_MENU[currentKey].name.toUpperCase();
+            count = 0; 
+            repCountDisp.textContent = "0";
+            isDone = false; // Reset completion state if changing exercises
+        };
 
-        document.getElementById('saveExerciseBtn').onclick = () => {
-            const name = document.getElementById('new-ex-name').value;
-            const pA = parseInt(document.getElementById('new-ex-pa').value);
-            const pB = parseInt(document.getElementById('new-ex-pb').value);
-            const pC = parseInt(document.getElementById('new-ex-pc').value);
-            const downThreshold = parseInt(document.getElementById('new-ex-down').value);
-            const upThreshold = parseInt(document.getElementById('new-ex-up').value);
+        startBtn.onclick = () => {
+            target = parseInt(document.getElementById('target-input').value) || 15;
+            targetDisp.textContent = target;
+            count = 0;
+            repCountDisp.textContent = "0";
+            isDone = false;
+            
+            startCam();
+            
+            startBtn.textContent = "RECORDING LIVE";
+            startBtn.className = "w-full bg-slate-800 py-6 rounded-[2rem] font-black text-slate-600 italic cursor-default";
+            badge.textContent = "AI SENSORS ACTIVE";
+        };
 
-            if (name && pA && pB && pC && downThreshold && upThreshold) {
-                // Generate a safe unique key
-                const key = name.toLowerCase().replace(/\s+/g, '_');
+        // 11. Custom Exercise Modal Controls
+        document.getElementById('openModalBtn').onclick = () => document.getElementById('modal-overlay').classList.remove('hidden');
+        document.getElementById('closeModalBtn').onclick = () => document.getElementById('modal-overlay').classList.add('hidden');
+        
+        document.getElementById('saveExBtn').onclick = () => {
+            const name = document.getElementById('new-name').value;
+            const pa = parseInt(document.getElementById('new-pa').value);
+            const pb = parseInt(document.getElementById('new-pb').value);
+            const pc = parseInt(document.getElementById('new-pc').value);
+            const dwn = parseInt(document.getElementById('new-down').value) || 90;
+            const up = parseInt(document.getElementById('new-up').value) || 160;
+            
+            if (name && !isNaN(pa) && !isNaN(pb) && !isNaN(pc)) {
+                const k = name.toLowerCase().replace(/\s+/g, '_');
+                EX_MENU[k] = { name, pA: pa, pB: pb, pC: pc, down: dwn, up: up };
                 
-                // Add to our global object
-                EXERCISE_MENU[key] = { name, pA, pB, pC, downThreshold, upThreshold };
+                // Save to browser memory
+                localStorage.setItem('DAILY30_EX', JSON.stringify(EX_MENU));
                 
-                // Save to LocalStorage so it stays after a refresh!
-                localStorage.setItem('myCustomWorkouts', JSON.stringify(EXERCISE_MENU));
-                
-                // Refresh dropdown and close
-                updateDropdown();
-                modalOverlay.classList.add('hidden');
-                alert(`${name} has been added to your menu!`);
+                refreshExList();
+                document.getElementById('modal-overlay').classList.add('hidden');
             } else {
-                alert("Please fill in all fields correctly.");
+                alert("Please fill in the Name and Points A, B, and C.");
             }
         };
     </script>
